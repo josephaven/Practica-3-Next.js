@@ -9,7 +9,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-6">
             <Link href="/" className="font-semibold">Next CRUD</Link>
             <div className="ml-auto flex gap-4 text-sm">
-              <Link href="/items" className="hover:underline">Items</Link>
+              <Link href="/students" className="hover:underline">Students</Link>
               <Link href="/about" className="hover:underline">About</Link>
             </div>
           </div>

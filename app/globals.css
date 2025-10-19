@@ -22,7 +22,49 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border bg-white shadow-sm;
+  }
+
+  .input {
+    @apply w-full rounded border px-3 py-2
+           focus:outline-none focus:ring-2 focus:ring-black/20;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded px-4 py-2
+           transition-colors bg-black text-white hover:opacity-90;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded px-4 py-2
+           transition-colors border hover:bg-slate-50;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded px-4 py-2
+           transition-colors bg-red-600 text-white hover:bg-red-700;
+  }
+
+  .h1 {
+    @apply text-2xl md:text-3xl font-semibold;
+  }
 }
 
 
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+}

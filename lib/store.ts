@@ -1,22 +1,37 @@
-export type Item = { id: string; title: string; done: boolean };
+export type Student = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  matricula: string;
+  carrera: string;
+};
 
-let items: Item[] = [
-  { id: '1', title: 'Aprender RSC', done: false },
-  { id: '2', title: 'Configurar Tailwind', done: true },
+let students: Student[] = [
+  { id: '1', nombre: 'Joseph', apellido: 'Avendaño', matricula: 'S22021299', carrera: 'Licenciatura en Ingeniera de Software' },
 ];
 
 export const db = {
-  list: async () => items,
-  get: async (id: string) => items.find(i => i.id === id),
-  create: async (data: Omit<Item, 'id'>) => {
+  async list() {
+    return students;
+  },
+  async get(id: string) {
+    return students.find((s) => s.id === id);
+  },
+  async create(data: Omit<Student, 'id'>) {
     const id = String(Date.now());
-    const it = { id, ...data };
-    items = [it, ...items];
-    return it;
+    const newStudent: Student = { id, ...data };
+    students = [newStudent, ...students];
+    return newStudent;
   },
-  update: async (id: string, data: Partial<Omit<Item, 'id'>>) => {
-    items = items.map(i => (i.id === id ? { ...i, ...data } : i));
-    return items.find(i => i.id === id);
+  async update(id: string, changes: Partial<Omit<Student, 'id'>>) {
+    const index = students.findIndex((s) => s.id === id);
+    if (index === -1) return null;
+    students[index] = { ...students[index], ...changes };
+    return students[index];
   },
-  remove: async (id: string) => (items = items.filter(i => i.id !== id), true),
+  async remove(id: string) {
+    const exists = students.some((s) => s.id === id);
+    students = students.filter((s) => s.id !== id);
+    return exists;
+  },
 };
