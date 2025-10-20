@@ -1,99 +1,46 @@
 // app/api/students/[id]/route.ts
-import { NextResponse } from "next/server";
-import { connectMongo } from "@/lib/mongodb";
-import { Student } from "@/model/Student";
-import { Types } from "mongoose";
+import { NextRequest, NextResponse } from 'next/server';
+import { connectMongo } from '@/lib/mongodb';
+import { Student } from '@/model/Student';
+import { isValidObjectId } from 'mongoose';
 
-function errMsg(e: unknown, fallback = "Error interno") {
-    return e instanceof Error ? e.message : fallback;
-}
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+    const { id } = await ctx.params;
 
-function isValidId(id: string) {
-    return Types.ObjectId.isValid(id);
-}
-
-type StudentPatch = Partial<{
-    nombre: string;
-    apellido: string;
-    matricula: string;
-    carrera: string;
-}>;
-
-function sanitizePatch(b: unknown): StudentPatch | null {
-    if (!b || typeof b !== "object") return null;
-    const o = b as Record<string, unknown>;
-    const out: StudentPatch = {};
-    if (typeof o.nombre === "string") out.nombre = o.nombre;
-    if (typeof o.apellido === "string") out.apellido = o.apellido;
-    if (typeof o.matricula === "string") out.matricula = o.matricula;
-    if (typeof o.carrera === "string") out.carrera = o.carrera;
-    return Object.keys(out).length ? out : null;
-}
-
-export async function GET(
-    _req: Request,
-    { params }: { params: { id: string } }
-) {
-    try {
-        await connectMongo();
-        const { id } = params;
-        if (!isValidId(id)) {
-            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-        }
-        const doc = await Student.findById(id);
-        if (!doc) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-        return NextResponse.json(doc.toJSON(), {
-            headers: { "Cache-Control": "no-store" },
-        });
-    } catch (e: unknown) {
-        return NextResponse.json({ error: errMsg(e) }, { status: 500 });
+    if (!isValidObjectId(id)) {
+        return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
     }
+
+    await connectMongo();
+    const doc = await Student.findById(id).lean({ getters: true, virtuals: true });
+
+    if (!doc) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(doc, { headers: { 'Cache-Control': 'no-store' } });
 }
 
-export async function PATCH(
-    req: Request,
-    { params }: { params: { id: string } }
-) {
-    try {
-        await connectMongo();
-        const { id } = params;
-        if (!isValidId(id)) {
-            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-        }
+export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+    const { id } = await ctx.params;
+    const body = await req.json().catch(() => null);
 
-        const body = await req.json().catch(() => null);
-        const patch = sanitizePatch(body);
-        if (!patch) {
-            return NextResponse.json({ error: "Body inválido" }, { status: 400 });
-        }
+    if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Body inválido' }, { status: 400 });
 
-        const updated = await Student.findByIdAndUpdate(id, patch, { new: true });
-        if (!updated) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    await connectMongo();
+    const updated = await Student.findByIdAndUpdate(id, body, { new: true, runValidators: true })
+        .lean({ getters: true, virtuals: true });
 
-        return NextResponse.json(updated.toJSON(), {
-            headers: { "Cache-Control": "no-store" },
-        });
-    } catch (e: unknown) {
-        return NextResponse.json({ error: errMsg(e, "Error al actualizar") }, { status: 500 });
-    }
+    if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(updated);
 }
 
-export async function DELETE(
-    _req: Request,
-    { params }: { params: { id: string } }
-) {
-    try {
-        await connectMongo();
-        const { id } = params;
-        if (!isValidId(id)) {
-            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-        }
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+    const { id } = await ctx.params;
 
-        const deleted = await Student.findByIdAndDelete(id);
-        if (!deleted) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    if (!isValidObjectId(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
-        return NextResponse.json({ ok: true }, { status: 200 });
-    } catch (e: unknown) {
-        return NextResponse.json({ error: errMsg(e, "Error al eliminar") }, { status: 500 });
-    }
+    await connectMongo();
+    const del = await Student.findByIdAndDelete(id).lean({ getters: true, virtuals: true });
+
+    if (!del) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ ok: true });
 }
