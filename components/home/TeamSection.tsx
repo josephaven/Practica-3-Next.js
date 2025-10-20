@@ -3,7 +3,7 @@ import TeamMemberCard from "./TeamMemberCard";
 const TEAM = [
     { name: "OLIVER BRYAN ANTONIO GALVEZ", matricula: "S21017275", image: "/team/alejandro.jpg" },
     { name: "JOSEPH J AVENDAÑO RODRIGUEZ", matricula: "S22021299", image: "/team/maria.jpg" },
-    { name: " JORDAN JAIR CRUZ MENDOZA", matricula: "S22017019", image: "/team/jose.jpg" },
+    { name: "JORDAN JAIR CRUZ MENDOZA", matricula: "S22017019", image: "/team/jordain.jpeg" },
     { name: "ZUZZET HERNANDEZ SUAREZ", matricula: "S22017025", image: "/team/ana.jpg" },
     { name: "RICARDO  LANDA SOLANO", matricula: "S22017010", image: "/team/carlos.jpg" },
 ];
