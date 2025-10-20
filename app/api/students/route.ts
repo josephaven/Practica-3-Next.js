@@ -1,35 +1,85 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/store";
+import { connectMongo } from "@/lib/mongodb";
+import { Student } from "@/model/Student";
 
-export const dynamic = "force-dynamic"; // evita cacheo de rutas
+export const dynamic = "force-dynamic";
 
-function validate(body: any) {
-    if (!body || typeof body !== "object") return "Body inválido";
+type StudentInput = {
+    nombre: string;
+    apellido: string;
+    matricula: string;
+    carrera: string;
+};
+
+// Valida y además actúa como type guard
+function isStudentInput(b: unknown): b is StudentInput {
+    if (!b || typeof b !== "object") return false;
+    const o = b as Record<string, unknown>;
+    return (
+        typeof o.nombre === "string" &&
+        typeof o.apellido === "string" &&
+        typeof o.matricula === "string" &&
+        typeof o.carrera === "string"
+    );
+}
+
+function missingFields(b: unknown): string[] {
     const req = ["nombre", "apellido", "matricula", "carrera"] as const;
-    const missing = req.filter((k) => !body?.[k]);
-    if (missing.length) return `Campos requeridos: ${missing.join(", ")}`;
-    return null;
+    if (!b || typeof b !== "object") return [...req];
+    const o = b as Record<string, unknown>;
+    return req.filter((k) => !o[k]);
+}
+
+function errMsg(e: unknown, fallback = "Error interno") {
+    return e instanceof Error ? e.message : fallback;
 }
 
 export async function GET() {
-    const list = await db.list();
-    return NextResponse.json(list, { headers: { "Cache-Control": "no-store" } });
+    try {
+        await connectMongo();
+        const docs = await Student.find().sort({ createdAt: -1 });
+        const list = docs.map((d) => d.toJSON());
+        return NextResponse.json(list, { headers: { "Cache-Control": "no-store" } });
+    } catch (e: unknown) {
+        console.error("GET /api/students error:", e);
+        return NextResponse.json({ error: errMsg(e) }, { status: 500 });
+    }
 }
 
 export async function POST(req: Request) {
-    const body = await req.json().catch(() => null);
-    const error = validate(body);
-    if (error) return NextResponse.json({ error }, { status: 400 });
+    try {
+        await connectMongo();
+        const body = await req.json().catch(() => null);
 
-    const created = await db.create({
-        nombre: String(body.nombre),
-        apellido: String(body.apellido),
-        matricula: String(body.matricula),
-        carrera: String(body.carrera),
-    });
+        // valida campos requeridos
+        const miss = missingFields(body);
+        if (miss.length) {
+            return NextResponse.json(
+                { error: `Campos requeridos: ${miss.join(", ")}` },
+                { status: 400 }
+            );
+        }
 
-    return NextResponse.json(created, {
-        status: 201,
-        headers: { "Cache-Control": "no-store" },
-    });
+        if (!isStudentInput(body)) {
+            return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+        }
+
+        const created = await Student.create({
+            nombre: body.nombre,
+            apellido: body.apellido,
+            matricula: body.matricula,
+            carrera: body.carrera,
+        });
+
+        return NextResponse.json(created.toJSON(), {
+            status: 201,
+            headers: { "Cache-Control": "no-store" },
+        });
+    } catch (e: unknown) {
+        console.error("POST /api/students error:", e);
+        if (typeof e === "object" && e && (e as { code?: number }).code === 11000) {
+            return NextResponse.json({ error: "Matrícula ya existente" }, { status: 409 });
+        }
+        return NextResponse.json({ error: errMsg(e, "Error al crear") }, { status: 500 });
+    }
 }
