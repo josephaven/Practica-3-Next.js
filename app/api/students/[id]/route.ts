@@ -1,37 +1,53 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/store";
 
+export const dynamic = "force-dynamic";
+
+function validate(body: any) {
+    if (!body || typeof body !== "object") return "Body inválido";
+    const req = ["nombre", "apellido", "matricula", "carrera"] as const;
+    const missing = req.filter((k) => !body?.[k]);
+    if (missing.length) return `Campos requeridos: ${missing.join(", ")}`;
+    return null;
+}
+
 export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
+    _req: Request,
+    { params }: { params: { id: string } }
 ) {
-  const { id } = await ctx.params;
-  const s = await db.get(id);
-  return s
-    ? NextResponse.json(s)
-    : NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    const s = await db.get(params.id);
+    return s
+        ? NextResponse.json(s, { headers: { "Cache-Control": "no-store" } })
+        : NextResponse.json({ error: "No encontrado" }, { status: 404 });
 }
 
 export async function PUT(
-  req: Request,
-  ctx: { params: Promise<{ id: string }> }
+    req: Request,
+    { params }: { params: { id: string } }
 ) {
-  const { id } = await ctx.params;
-  const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
-  const updated = await db.update(id, body);
-  return updated
-    ? NextResponse.json(updated)
-    : NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    const body = await req.json().catch(() => null);
+    const error = validate(body);
+    if (error) return NextResponse.json({ error }, { status: 400 });
+
+    const updated = await db.update(params.id, {
+        nombre: String(body.nombre),
+        apellido: String(body.apellido),
+        matricula: String(body.matricula),
+        carrera: String(body.carrera),
+    });
+
+    return updated
+        ? NextResponse.json(updated, { headers: { "Cache-Control": "no-store" } })
+        : NextResponse.json({ error: "No encontrado" }, { status: 404 });
 }
 
 export async function DELETE(
-  _req: Request,
-  ctx: { params: Promise<{ id: string }> }
+    _req: Request,
+    { params }: { params: { id: string } }
 ) {
-  const { id } = await ctx.params;
-  const ok = await db.remove(id);
-  return ok
-    ? NextResponse.json({ ok: true })
-    : NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    const ok = await db.remove(params.id);
+    // 204 es el status HTTP más apropiado cuando no devuelves body
+    return ok
+        ? new NextResponse(null, { status: 204, headers: { "Cache-Control": "no-store" } })
+        : NextResponse.json({ error: "No encontrado" }, { status: 404 });
 }
