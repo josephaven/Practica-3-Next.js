@@ -1,12 +1,9 @@
-import StudentForm from "@/components/StudentForm";
-import StudentList from "@/components/StudentList";
+import StudentManager from "@/components/students/StudentManager";
 
 export default function Page() {
-  return (
-    <section className="grid gap-6">
-      <h1 className="text-2xl font-semibold">Estudiantes</h1>
-      <StudentForm />
-      <StudentList />
-    </section>
-  );
+    return (
+        <section className="grid gap-6">
+            <StudentManager />
+        </section>
+    );
 }

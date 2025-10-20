@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useStudents } from "./StudentContext";
+import { useStudents } from "./students/StudentContext";
 
 export default function StudentForm() {
   const { dispatch } = useStudents();

@@ -62,3 +62,7 @@ body {
   *::-webkit-scrollbar { width: 8px; height: 8px; }
   *::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
 }
+
+button {
+    cursor: pointer;
+}
